@@ -4,4 +4,7 @@ init:
 test:
 	py.test tests
 
+pq:
+	pyinstaller page_query/main.py -n pq	
+
 .PHONY: init test
