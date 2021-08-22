@@ -1,0 +1,8 @@
+elasticsearch_url: http://localhost:9200
+rules:
+  - type: manual_http_urls
+    title: golang helloworld
+    tags: [golang]
+    summary: the first program of golang
+    http_urls:
+      - "https://gobyexample.com/hello-world"
