@@ -55,7 +55,9 @@ class ManualHttpUrlsGlobMarkdown:
             ret = {}
         else:
             ret = yaml.safe_load(meta_content)
-        ret['title'] = title
+        if 'title' not in title:
+            ret['title'] = title
         ret['summary'] = file_content
-        ret['urls'] = ret.pop('http_urls')
+        ret['tags'] = ret.pop('tags')
+        ret['urls'] = ret.pop('http_urls', [])
         return ret
