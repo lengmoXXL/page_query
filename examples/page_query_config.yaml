@@ -6,3 +6,6 @@ rules:
     summary: the first program of golang
     http_urls:
       - "https://gobyexample.com/hello-world"
+  - type: manual_http_urls_glob_md
+    glob: 
+    - docs/*.md

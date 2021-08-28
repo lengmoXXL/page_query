@@ -2,22 +2,29 @@
 
 import logging
 import yaml
+import click
+from typing import List
 
 from pathlib import Path
-from typing import List
+
 from elasticsearch import Elasticsearch
-from argparse import ArgumentParser
+from rich.console import Console
+from rich.table import Table, Column
+from rich.box import SIMPLE
 
 from page_query.rule.manual_http_urls import ManualHttpUrls
 from page_query.rule.manual_file_urls import ManualFileUrls
+from page_query.rule.manual_http_urls_glob_md import ManualHttpUrlsGlobMarkdown
+
 
 
 def update_pages(elasticsearch_stub: Elasticsearch, rules: List):
     r = elasticsearch_stub.delete_by_query('tldr', body={'query': {'match_all': {}}})
     logging.info(f'clear existing pages: {r}')
     for rule in rules:
-        r = elasticsearch_stub.index('tldr', body=rule.page())
-        logging.info(f'index page {rule.title}: {r}')
+        for page in rule.pages():
+            r = elasticsearch_stub.index('tldr', body=page)
+            logging.info(f'index page {page["title"]}: {r}')
 
 
 def query_pages(elasticsearch_stub: Elasticsearch, query_string: str):
@@ -56,36 +63,38 @@ def load_rules_from_config(config_path: str):
                                         tags = rule_dict['tags'],
                                         summary = rule_dict['summary'],
                                         file_urls = rule_dict['file_urls']))
+        elif rule_dict['type'] == 'manual_http_urls_glob_md':
+            rules.append(ManualHttpUrlsGlobMarkdown(
+                glob=[f'{path.parent}/{p}' for p in rule_dict['glob']]))
         else:
             raise ValueError(f'{rule_dict["type"]} not known')
     return elasticsearch_stub, rules
 
 
 def print_query_results(res: List):
+    table = Table(
+        Column("Id"),
+        Column("Title", style='green'),
+        Column("Summary", style="magenta"),
+        Column("Tags", style='orange4'),
+        Column("Urls"),
+        box = SIMPLE
+    )
     for idx, hit in enumerate(res['hits']):
         source = hit['_source']
-        print('#{:5d}: title: {}'.format(idx, source["title"]))
-        print('        summary: {}'.format(source["summary"]))
-        print('        tags: {}'.format(source['tags']))
-        print('        urls:')
-        for url in source.get('urls', []):
-            print('       - {}'.format(url))
+        table.add_row(str(idx), source["title"], source["summary"],
+                      ','.join(source["tags"]), '\n'.join(source.get('urls', [])))
+    console = Console(width=150)
+    console.print(table)
 
 
-def main():
-    parser = ArgumentParser(description='query custom pages')
-    parser.add_argument('--config', type=str, default='page_query_config.yaml')
-    parser.add_argument('--update', action='store_true')
-    parser.add_argument('--query', type=str, help='query string', default='')
-
-    args = parser.parse_args()
-
-    elasticsearch_stub, rules = load_rules_from_config(args.config)
-    if args.update:
+@click.command()
+@click.option('--config', default='page_query_config.yaml', help='the path of config file')
+@click.option('--update', is_flag=True, default=False)
+@click.option('--query', default=None, type=str, help='query string')
+def main(config: str, update: bool, query: str):
+    elasticsearch_stub, rules = load_rules_from_config(config)
+    if update:
         update_pages(elasticsearch_stub, rules)
     else:
-        print_query_results(query_pages(elasticsearch_stub, args.query))
-
-
-if __name__ == '__main__':
-    main()
+        print_query_results(query_pages(elasticsearch_stub, query))

@@ -2,4 +2,5 @@ pyyaml==5.4.1
 pytest==6.2.4
 requests==2.26.0
 elasticsearch==7.14.0
-pyinstaller==4.5.1
+click==8.0.1
+rich==10.7.0

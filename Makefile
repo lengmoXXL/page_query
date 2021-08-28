@@ -1,10 +1,15 @@
+export PYTHONPATH=.
+
 init:
 	pip install -r requirements.txt
 
-test:
+test-all:
 	py.test tests
 
+test-grep:
+	py.test tests -k $(GREP)
+
 pq:
-	pyinstaller page_query/main.py -n pq	
+	pip install --editable .
 
 .PHONY: init test

@@ -13,7 +13,7 @@ class ManualFileUrls:
         self._summary = summary
         self._file_urls = file_urls
 
-    def page(self) -> Dict:
+    def pages(self):
         body = []
         for url in self._file_urls:
             path = Path(url)            
@@ -21,7 +21,7 @@ class ManualFileUrls:
                 logging.warning(f'{path} is not file')
             else:
                 body.append(path.read_bytes())
-        return {
+        yield {
             'title': self._title,
             'tags': self._tags,
             'summary': self._summary,

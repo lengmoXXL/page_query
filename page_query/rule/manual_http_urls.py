@@ -13,7 +13,7 @@ class ManualHttpUrls:
         self._summary = summary
         self._http_urls = http_urls
 
-    def page(self) -> Dict:
+    def pages(self) -> Dict:
         body = []
         for url in self._http_urls:
             r = requests.get(url)
@@ -21,7 +21,7 @@ class ManualHttpUrls:
                 logging.warning(f'failed to request {url}, status code: {r.status_code}')
             else:
                 body.append(r.text)
-        return {
+        yield {
             'title': self._title,
             'tags': self._tags,
             'summary': self._summary,
