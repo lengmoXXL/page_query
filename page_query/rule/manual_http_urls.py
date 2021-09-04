@@ -1,5 +1,6 @@
 import requests
 import logging
+import hashlib
 
 from typing import Dict, List
 
@@ -13,7 +14,20 @@ class ManualHttpUrls:
         self._summary = summary
         self._http_urls = http_urls
 
-    def pages(self) -> Dict:
+        md5 = hashlib.md5()
+        md5.update(title.encode('utf-8'))
+        md5.update(','.join(tags).encode('utf-8'))
+        md5.update(summary.encode('utf-8'))
+        md5.update('\n'.join(http_urls).encode('utf-8'))
+        self._id = md5.hexdigest()
+
+    def page_ids(self):
+        yield self._id
+
+    def pages(self, filter=set()) -> Dict:
+        if self._id in filter:
+            raise StopIteration
+
         body = []
         for url in self._http_urls:
             r = requests.get(url)
@@ -21,7 +35,7 @@ class ManualHttpUrls:
                 logging.warning(f'failed to request {url}, status code: {r.status_code}')
             else:
                 body.append(r.text)
-        yield {
+        yield self._id, {
             'title': self._title,
             'tags': self._tags,
             'summary': self._summary,
@@ -29,6 +43,5 @@ class ManualHttpUrls:
             'urls': self._http_urls
         }
 
-    @property
-    def title(self) -> str:
+    def __str__(self) -> str:
         return self._title

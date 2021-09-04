@@ -1,3 +1,4 @@
+import hashlib
 import logging
 
 from typing import Dict, List
@@ -13,7 +14,20 @@ class ManualFileUrls:
         self._summary = summary
         self._file_urls = file_urls
 
-    def pages(self):
+        md5 = hashlib.md5()
+        md5.update(title.encode('utf-8'))
+        md5.update(','.join(tags).encode('utf-8'))
+        md5.update(summary.encode('utf-8'))
+        md5.update('\n'.join(file_urls).encode('utf-8'))
+        self._id = md5.hexdigest()
+    
+    def page_ids(self):
+        yield self._id
+
+    def pages(self, filter=set()):
+        if self._id in filter:
+            raise StopIteration
+
         body = []
         for url in self._file_urls:
             path = Path(url)            
@@ -21,7 +35,7 @@ class ManualFileUrls:
                 logging.warning(f'{path} is not file')
             else:
                 body.append(path.read_bytes())
-        yield {
+        yield self._id, {
             'title': self._title,
             'tags': self._tags,
             'summary': self._summary,
@@ -29,6 +43,5 @@ class ManualFileUrls:
             'urls': self._file_urls
         }
     
-    @property
-    def title(self) -> str:
+    def __str__(self) -> str:
         return self._title
