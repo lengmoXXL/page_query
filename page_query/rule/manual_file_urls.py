@@ -26,7 +26,7 @@ class ManualFileUrls:
 
     def pages(self, filter=set()):
         if self._id in filter:
-            raise StopIteration
+            return
 
         body = []
         for url in self._file_urls:
@@ -34,7 +34,7 @@ class ManualFileUrls:
             if not path.is_file():
                 logging.warning(f'{path} is not file')
             else:
-                body.append(path.read_bytes())
+                body.append(path.read_text())
         yield self._id, {
             'title': self._title,
             'tags': self._tags,
