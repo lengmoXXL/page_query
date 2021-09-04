@@ -26,7 +26,7 @@ class ManualHttpUrls:
 
     def pages(self, filter=set()) -> Dict:
         if self._id in filter:
-            raise StopIteration
+            return
 
         body = []
         for url in self._http_urls:
